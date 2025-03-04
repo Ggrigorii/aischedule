@@ -121,18 +121,16 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
             padding: 10px;
-            transform-origin: center;
         }
 
         .calendar-day:hover {
             background: rgba(100, 255, 218, 0.1);
             border-color: rgba(100, 255, 218, 0.3);
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 5px 15px rgba(100, 255, 218, 0.2);
+            transform: translateY(-2px);
         }
 
         .calendar-day.disabled {
@@ -178,17 +176,14 @@
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
         }
 
         .time-slot:hover {
             background: rgba(100, 255, 218, 0.1);
             border-color: rgba(100, 255, 218, 0.3);
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 5px 15px rgba(100, 255, 218, 0.2);
+            transform: translateY(-2px);
         }
 
         .time-slot:active {
@@ -934,22 +929,9 @@
         }
 
         function getAvailableSlots(date) {
-            const dateAvailableSlots = availableSlots[date] || {};
-            const bookedCount = bookings[date]?.length || 0;
-            
-            // Подсчитываем количество отключенных слотов
-            let disabledCount = 0;
-            for (let hour = 14; hour < 21; hour++) {
-                const time = `${hour}:00`;
-                if (dateAvailableSlots[time] === false) {
-                    disabledCount++;
-                }
-            }
-            
-            // Общее количество слотов минус отключенные и забронированные
-            const totalSlots = 7; // с 14:00 до 20:00
-            const availableSlots = totalSlots - disabledCount - bookedCount;
-            return Math.max(0, availableSlots); // Не позволяем отрицательные значения
+            const totalSlots = 8;
+            const booked = bookings[date]?.length || 0;
+            return totalSlots - booked;
         }
 
         function prevMonth() {
