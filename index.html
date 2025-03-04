@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Онищенко Григорий - Запись на встречу</title>
+    <title>Запись на встречу</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
     <!-- Добавляем Firebase -->
@@ -637,6 +637,53 @@
                 }
             }
         }
+
+        /* Добавляем стили для управления слотами */
+        .admin-time-slot {
+            position: relative;
+        }
+
+        .admin-time-slot .toggle-slot {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: rgba(255, 99, 99, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .admin-time-slot .toggle-slot.available {
+            background: rgba(100, 255, 218, 0.5);
+        }
+
+        .admin-time-slot.disabled {
+            opacity: 0.5;
+            background: rgba(255, 99, 99, 0.1);
+        }
+
+        .save-slots-btn {
+            display: none;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: rgba(100, 255, 218, 0.2);
+            border: 1px solid rgba(100, 255, 218, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-slots-btn:hover {
+            background: rgba(100, 255, 218, 0.3);
+        }
+
+        .admin-mode .save-slots-btn {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -759,6 +806,7 @@
         let selectedDate = '';
         let selectedTime = '';
         let bookings = {};
+        let availableSlots = {};
         let isAdminMode = false;
 
         // Слушаем изменения в базе данных
@@ -771,6 +819,14 @@
                 } else {
                     generateTimeSlots(selectedDate);
                 }
+            }
+        });
+
+        // Слушаем изменения в доступных слотах
+        database.ref('availableSlots').on('value', (snapshot) => {
+            availableSlots = snapshot.val() || {};
+            if (selectedDate) {
+                generateTimeSlots(selectedDate);
             }
         });
 
@@ -842,21 +898,54 @@
             timeSlotsContainer.innerHTML = '';
             
             const dateBookings = bookings[date] || [];
+            const dateAvailableSlots = availableSlots[date] || {};
             
             for(let hour = 14; hour < 21; hour++) {
-                const timeSlot = document.createElement('div');
                 const time = `${hour}:00`;
-                timeSlot.className = 'time-slot';
+                const timeSlot = document.createElement('div');
+                timeSlot.className = isAdminMode ? 'time-slot admin-time-slot' : 'time-slot';
                 
-                if (dateBookings.some(booking => booking.time === time)) {
-                    timeSlot.className += ' booked';
-                    timeSlot.innerHTML = `${time}<br>Занято`;
+                // Проверяем, доступен ли слот
+                const isSlotAvailable = dateAvailableSlots[time] !== false;
+                
+                if (isAdminMode) {
+                    // Для админа показываем все слоты с возможностью управления
+                    const isBooked = dateBookings.some(booking => booking.time === time);
+                    timeSlot.innerHTML = `
+                        ${time}
+                        <div class="toggle-slot ${isSlotAvailable ? 'available' : ''}" 
+                             onclick="toggleTimeSlot(event, '${date}', '${time}')"></div>
+                    `;
+                    if (!isSlotAvailable) {
+                        timeSlot.className += ' disabled';
+                    }
+                    if (isBooked) {
+                        timeSlot.className += ' booked';
+                        timeSlot.innerHTML += '<br>Занято';
+                    }
                 } else {
-                    timeSlot.innerHTML = time;
-                    timeSlot.onclick = () => selectTimeSlot(date, time);
+                    // Для пользователей показываем только доступные слоты
+                    if (dateBookings.some(booking => booking.time === time)) {
+                        timeSlot.className += ' booked';
+                        timeSlot.innerHTML = `${time}<br>Занято`;
+                    } else if (!isSlotAvailable) {
+                        timeSlot.style.display = 'none';
+                    } else {
+                        timeSlot.innerHTML = time;
+                        timeSlot.onclick = () => selectTimeSlot(date, time);
+                    }
                 }
                 
                 timeSlotsContainer.appendChild(timeSlot);
+            }
+
+            // Добавляем кнопку сохранения для админа
+            if (isAdminMode) {
+                const saveButton = document.createElement('button');
+                saveButton.className = 'save-slots-btn';
+                saveButton.textContent = 'Сохранить расписание';
+                saveButton.onclick = () => saveAvailableSlots(date);
+                timeSlotsContainer.appendChild(saveButton);
             }
         }
 
@@ -948,6 +1037,29 @@
             document.getElementById('time-slots').style.display = 'none';
         }
 
+        function toggleTimeSlot(event, date, time) {
+            event.stopPropagation();
+            const slot = event.target;
+            slot.classList.toggle('available');
+            slot.parentElement.classList.toggle('disabled');
+            
+            if (!availableSlots[date]) {
+                availableSlots[date] = {};
+            }
+            availableSlots[date][time] = slot.classList.contains('available');
+        }
+
+        function saveAvailableSlots(date) {
+            database.ref('availableSlots').update({
+                [date]: availableSlots[date] || {}
+            }).then(() => {
+                alert('Расписание сохранено');
+            }).catch((error) => {
+                alert('Ошибка при сохранении расписания');
+                console.error('Ошибка:', error);
+            });
+        }
+
         // Инициализация календаря при загрузке
         generateCalendar(currentDate);
 
@@ -967,6 +1079,9 @@
                 isAdminMode = true;
                 document.body.classList.add('admin-mode');
                 generateCalendar(currentDate);
+                if (selectedDate) {
+                    generateTimeSlots(selectedDate);
+                }
             } else {
                 alert('Неверный пароль');
             }
