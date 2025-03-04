@@ -407,6 +407,236 @@
         .admin-mode .calendar-day.has-bookings:hover {
             background: rgba(100, 255, 218, 0.1);
         }
+
+        /* Медиа-запросы для адаптивности */
+        /* Большие планшеты и маленькие ноутбуки */
+        @media screen and (max-width: 1024px) {
+            .container {
+                max-width: 95%;
+                padding: 30px;
+            }
+        }
+
+        /* Планшеты в альбомной ориентации */
+        @media screen and (max-width: 900px) {
+            .calendar-grid {
+                gap: 8px;
+            }
+        }
+
+        /* Планшеты в портретной ориентации */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+                margin: 0;
+            }
+            .calendar-grid {
+                gap: 5px;
+                padding: 10px;
+            }
+            .calendar-day {
+                padding: 5px;
+                font-size: 0.9em;
+            }
+            .calendar-day .date {
+                font-size: 1em;
+                margin-bottom: 2px;
+            }
+            .calendar-day .slots {
+                font-size: 0.7em;
+            }
+            .time-slots {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 5px;
+                padding: 10px;
+            }
+            .time-slot {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+            .booking-form {
+                padding: 15px;
+            }
+            .form-group input {
+                padding: 10px;
+            }
+            .submit-btn {
+                width: 100%;
+                padding: 12px;
+            }
+            .calendar-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            h2 {
+                font-size: 1.2em;
+            }
+            .profile-img {
+                width: 100px;
+                height: 100px;
+            }
+            .contacts {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            .contact-link {
+                margin: 5px 0;
+            }
+            .admin-btn {
+                top: 10px;
+                right: 10px;
+            }
+            .booking-details {
+                padding: 15px;
+                margin-top: 15px;
+            }
+            .booking-item {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+        }
+
+        /* Большие телефоны */
+        @media screen and (max-width: 576px) {
+            .container {
+                padding: 15px;
+            }
+            .calendar-grid {
+                gap: 4px;
+                padding: 8px;
+            }
+            .calendar-day {
+                padding: 4px;
+                font-size: 0.85em;
+            }
+            .time-slots {
+                grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            }
+            h1 {
+                font-size: 1.3em;
+            }
+            .profile-img {
+                width: 90px;
+                height: 90px;
+            }
+        }
+
+        /* Средние телефоны */
+        @media screen and (max-width: 480px) {
+            .calendar-nav button {
+                padding: 5px 10px;
+            }
+            .weekday-labels {
+                font-size: 0.8em;
+            }
+            .calendar-day {
+                font-size: 0.8em;
+            }
+            .time-slots {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+            .notification-modal {
+                width: 90%;
+                min-width: auto;
+                padding: 20px;
+            }
+            .admin-login-modal {
+                width: 90%;
+                min-width: auto;
+                padding: 20px;
+            }
+        }
+
+        /* Маленькие телефоны */
+        @media screen and (max-width: 360px) {
+            .container {
+                padding: 10px;
+            }
+            .calendar-day {
+                font-size: 0.75em;
+                padding: 3px;
+            }
+            .time-slots {
+                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            }
+            .profile-img {
+                width: 80px;
+                height: 80px;
+            }
+            h1 {
+                font-size: 1.2em;
+            }
+            .booking-form {
+                padding: 10px;
+            }
+            .form-group {
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Очень маленькие телефоны */
+        @media screen and (max-width: 320px) {
+            .calendar-grid {
+                gap: 2px;
+                padding: 5px;
+            }
+            .time-slots {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+                gap: 3px;
+            }
+            .weekday-labels {
+                font-size: 0.7em;
+            }
+        }
+
+        /* Исправление для поворота экрана */
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            .container {
+                padding: 10px;
+            }
+            .profile {
+                margin-bottom: 20px;
+            }
+            .profile-img {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 10px;
+            }
+            .calendar-container {
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Исправление для iPhone */
+        @supports (-webkit-touch-callout: none) {
+            .container {
+                backdrop-filter: none;
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            input {
+                font-size: 16px;
+            }
+
+            /* Исправление для iPhone SE и маленьких iPhone */
+            @media screen and (max-width: 375px) {
+                .calendar-day {
+                    font-size: 0.7em;
+                }
+                .time-slots {
+                    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+                }
+            }
+        }
     </style>
 </head>
 <body>
