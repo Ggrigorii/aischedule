@@ -364,6 +364,7 @@
             font-size: 1em;
             padding: 8px;
             transition: all 0.3s ease;
+            z-index: 100;
         }
 
         .admin-btn:hover {
@@ -429,6 +430,7 @@
 
         .admin-mode .calendar-day.has-bookings {
             border-color: rgba(100, 255, 218, 0.3);
+            background: rgba(100, 255, 218, 0.05);
         }
 
         .admin-mode .calendar-day.has-bookings:hover {
@@ -666,6 +668,10 @@
         .admin-mode .save-slots-btn {
             display: block;
         }
+
+        .admin-mode .time-slots {
+            display: grid !important;
+        }
     </style>
 </head>
 <body>
@@ -887,28 +893,25 @@
                 const timeSlot = document.createElement('div');
                 timeSlot.className = isAdminMode ? 'time-slot admin-time-slot' : 'time-slot';
                 
-                // Проверяем, доступен ли слот
                 const isSlotAvailable = dateAvailableSlots[time] !== false;
+                const isBooked = dateBookings.some(booking => booking.time === time);
                 
                 if (isAdminMode) {
-                    // Для админа показываем все слоты с возможностью управления
-                    const isBooked = dateBookings.some(booking => booking.time === time);
                     timeSlot.innerHTML = `
                         ${time}
                         <div class="toggle-slot ${isSlotAvailable ? 'available' : ''}" 
                              onclick="toggleTimeSlot(event, '${date}', '${time}')"></div>
                     `;
                     if (!isSlotAvailable) {
-                        timeSlot.className += ' disabled';
+                        timeSlot.classList.add('disabled');
                     }
                     if (isBooked) {
-                        timeSlot.className += ' booked';
+                        timeSlot.classList.add('booked');
                         timeSlot.innerHTML += '<br>Занято';
                     }
                 } else {
-                    // Для пользователей показываем только доступные слоты
-                    if (dateBookings.some(booking => booking.time === time)) {
-                        timeSlot.className += ' booked';
+                    if (isBooked) {
+                        timeSlot.classList.add('booked');
                         timeSlot.innerHTML = `${time}<br>Занято`;
                     } else if (!isSlotAvailable) {
                         timeSlot.style.display = 'none';
@@ -921,7 +924,6 @@
                 timeSlotsContainer.appendChild(timeSlot);
             }
 
-            // Добавляем кнопку сохранения для админа
             if (isAdminMode) {
                 const saveButton = document.createElement('button');
                 saveButton.className = 'save-slots-btn';
@@ -1062,8 +1064,11 @@
         const ADMIN_PASSWORD = 'admin123'; // Замените на свой сложный пароль
 
         function showAdminLogin() {
-            document.getElementById('admin-login-modal').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
+            const modal = document.getElementById('admin-login-modal');
+            const overlay = document.getElementById('overlay');
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+            document.getElementById('admin-password').value = ''; // Очищаем поле пароля
         }
 
         function loginAdmin() {
@@ -1073,6 +1078,7 @@
                 document.getElementById('overlay').style.display = 'none';
                 isAdminMode = true;
                 document.body.classList.add('admin-mode');
+                alert('Вы вошли как администратор');
                 generateCalendar(currentDate);
                 if (selectedDate) {
                     generateTimeSlots(selectedDate);
