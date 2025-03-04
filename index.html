@@ -35,6 +35,15 @@
             animation: backgroundMove 20s ease-in-out infinite alternate;
         }
 
+        @keyframes backgroundMove {
+            0% {
+                background-position: 0% 0%;
+            }
+            100% {
+                background-position: 100% 100%;
+            }
+        }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -866,7 +875,7 @@
                     slotsSpan.textContent = bookingsCount > 0 ? `${bookingsCount} записей` : 'Нет записей';
                 } else {
                     const availableSlots = getAvailableSlots(currentDateStr);
-                    slotsSpan.textContent = `${availableSlots} мест`;
+                    slotsSpan.textContent = availableSlots;
                 }
 
                 dayElement.appendChild(dateSpan);
@@ -929,9 +938,22 @@
         }
 
         function getAvailableSlots(date) {
-            const totalSlots = 8;
-            const booked = bookings[date]?.length || 0;
-            return totalSlots - booked;
+            const totalSlots = 7; // всего 7 слотов (с 14:00 до 20:00)
+            const dateAvailableSlots = availableSlots[date] || {};
+            const bookedSlots = bookings[date]?.length || 0;
+            
+            // Подсчитываем количество отключенных слотов (false)
+            const disabledSlots = Object.values(dateAvailableSlots).filter(value => value === false).length;
+            
+            // Вычитаем из общего количества слотов количество отключенных и забронированных
+            const available = totalSlots - disabledSlots - bookedSlots;
+            
+            // Определяем правильное окончание слова "место"
+            let word = 'мест';
+            if (available === 1) word = 'место';
+            else if (available >= 2 && available <= 4) word = 'места';
+            
+            return `${available} ${word}`;
         }
 
         function prevMonth() {
