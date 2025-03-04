@@ -6,9 +6,6 @@
     <title>Онищенко Григорий - Запись на встречу</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
     <style>
         body {
             font-family: 'Montserrat', sans-serif;
@@ -75,18 +72,106 @@
             margin-bottom: 30px;
         }
 
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-nav {
+            display: flex;
             gap: 15px;
+            align-items: center;
+        }
+
+        .calendar-nav button {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-nav button:hover {
+            background: rgba(100, 255, 218, 0.2);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
             margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            padding: 10px;
+        }
+
+        .calendar-day:hover {
+            background: rgba(100, 255, 218, 0.1);
+            border-color: rgba(100, 255, 218, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .calendar-day.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 99, 99, 0.1);
+        }
+
+        .calendar-day .date {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .calendar-day .slots {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .weekday-labels {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .time-slots {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
         }
 
         .time-slot {
             padding: 15px;
+            text-align: center;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
-            text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -95,6 +180,7 @@
         .time-slot:hover {
             background: rgba(100, 255, 218, 0.1);
             border-color: rgba(100, 255, 218, 0.3);
+            transform: translateY(-2px);
         }
 
         .time-slot.booked {
@@ -144,23 +230,6 @@
 
         .submit-btn:hover {
             transform: translateY(-2px);
-        }
-
-        .flatpickr-calendar {
-            background: rgba(25, 25, 25, 0.95) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 15px !important;
-            backdrop-filter: blur(10px);
-        }
-
-        .flatpickr-day {
-            color: #fff !important;
-            border-radius: 8px !important;
-        }
-
-        .flatpickr-day.selected {
-            background: #64ffda !important;
-            color: #000 !important;
         }
 
         .contacts {
@@ -262,9 +331,27 @@
         </div>
 
         <div class="calendar-container">
-            <input type="text" id="date-picker" placeholder="Выберите дату" style="display: none;">
-            <div class="time-slots">
-                <!-- Слоты времени будут добавлены через JavaScript -->
+            <div class="calendar-header">
+                <h2 id="current-month">Январь 2024</h2>
+                <div class="calendar-nav">
+                    <button onclick="prevMonth()">←</button>
+                    <button onclick="nextMonth()">→</button>
+                </div>
+            </div>
+            <div class="weekday-labels">
+                <div>Пн</div>
+                <div>Вт</div>
+                <div>Ср</div>
+                <div>Чт</div>
+                <div>Пт</div>
+                <div>Сб</div>
+                <div>Вс</div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- Дни будут добавлены через JavaScript -->
+            </div>
+            <div class="time-slots" id="time-slots">
+                <!-- Временные слоты будут добавлены через JavaScript -->
             </div>
         </div>
 
@@ -317,60 +404,106 @@
     </div>
 
     <script>
-        // Хранилище для записей
-        let bookings = JSON.parse(localStorage.getItem('bookings')) || {};
+        let currentDate = new Date();
         let selectedDate = '';
         let selectedTime = '';
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || {};
 
-        // Инициализация календаря
-        flatpickr("#date-picker", {
-            locale: "ru",
-            minDate: "today",
-            maxDate: new Date().fp_incr(30),
-            disable: ["2024-01-01", "2024-01-07"],
-            onChange: function(selectedDates, dateStr) {
-                selectedDate = dateStr;
-                generateTimeSlots(dateStr);
-            }
-        });
+        function generateCalendar(date) {
+            const grid = document.getElementById('calendar-grid');
+            const monthYear = document.getElementById('current-month');
+            grid.innerHTML = '';
 
-        // Генерация временных слотов
-        function generateTimeSlots(date) {
-            const timeSlots = document.querySelector('.time-slots');
-            timeSlots.innerHTML = '';
+            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+            const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
             
-            // Получаем занятые слоты для выбранной даты
-            const dateBookings = bookings[date] || [];
+            const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
+                          'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+            monthYear.textContent = `${months[date.getMonth()]} ${date.getFullYear()}`;
 
-            // Генерация слотов с 10:00 до 18:00
-            for (let hour = 10; hour < 18; hour++) {
+            let firstDayIndex = firstDay.getDay() || 7;
+            for(let i = 1; i < firstDayIndex; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day disabled';
+                grid.appendChild(emptyDay);
+            }
+
+            for(let day = 1; day <= lastDay.getDate(); day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                
+                const currentDateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const dayDate = new Date(currentDateStr);
+                
+                if (dayDate < new Date().setHours(0,0,0,0)) {
+                    dayElement.className += ' disabled';
+                } else {
+                    dayElement.onclick = () => selectDate(currentDateStr);
+                }
+
+                const dateSpan = document.createElement('div');
+                dateSpan.className = 'date';
+                dateSpan.textContent = day;
+
+                const slotsSpan = document.createElement('div');
+                slotsSpan.className = 'slots';
+                const availableSlots = getAvailableSlots(currentDateStr);
+                slotsSpan.textContent = `${availableSlots} мест`;
+
+                dayElement.appendChild(dateSpan);
+                dayElement.appendChild(slotsSpan);
+                grid.appendChild(dayElement);
+            }
+        }
+
+        function generateTimeSlots(date) {
+            const timeSlotsContainer = document.getElementById('time-slots');
+            timeSlotsContainer.style.display = 'grid';
+            timeSlotsContainer.innerHTML = '';
+            
+            const dateBookings = bookings[date] || [];
+            
+            for(let hour = 10; hour < 18; hour++) {
                 const timeSlot = document.createElement('div');
                 const time = `${hour}:00`;
                 timeSlot.className = 'time-slot';
                 
-                // Проверка, занят ли слот
                 if (dateBookings.some(booking => booking.time === time)) {
                     timeSlot.className += ' booked';
                     timeSlot.innerHTML = `${time}<br>Занято`;
-                    
-                    // Добавляем информацию о брони при наведении
-                    const booking = dateBookings.find(b => b.time === time);
-                    timeSlot.title = `Забронировано: ${booking.name}`;
                 } else {
                     timeSlot.innerHTML = time;
                     timeSlot.onclick = () => selectTimeSlot(date, time);
                 }
                 
-                timeSlots.appendChild(timeSlot);
+                timeSlotsContainer.appendChild(timeSlot);
             }
         }
 
-        // Выбор временного слота
-        function selectTimeSlot(date, time) {
+        function getAvailableSlots(date) {
+            const totalSlots = 8;
+            const booked = bookings[date]?.length || 0;
+            return totalSlots - booked;
+        }
+
+        function prevMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            generateCalendar(currentDate);
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            generateCalendar(currentDate);
+        }
+
+        function selectDate(date) {
             selectedDate = date;
+            generateTimeSlots(date);
+        }
+
+        function selectTimeSlot(date, time) {
             selectedTime = time;
-            const form = document.getElementById('booking-form');
-            form.style.display = 'block';
+            document.getElementById('booking-form').style.display = 'block';
         }
 
         // Показ модального окна для выбора способа уведомления
@@ -440,8 +573,8 @@
             showNotificationModal();
         };
 
-        // Автоматически открываем календарь при загрузке страницы
-        document.getElementById('date-picker').click();
+        // Инициализация календаря при загрузке
+        generateCalendar(currentDate);
     </script>
 </body>
 </html> 
