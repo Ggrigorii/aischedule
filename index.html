@@ -320,6 +320,69 @@
             font-size: 0.9em;
             color: rgba(255, 255, 255, 0.7);
         }
+
+        /* Стили для админ-панели */
+        .admin-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        .admin-btn:hover {
+            color: #64ffda;
+        }
+
+        .admin-login-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(25, 25, 25, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            min-width: 300px;
+        }
+
+        .admin-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(25, 25, 25, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            width: 80%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .bookings-list {
+            margin-top: 20px;
+        }
+
+        .booking-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .booking-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -328,6 +391,9 @@
             <img src="1.jpg" alt="Фото профиля" class="profile-img">
             <h1>Онищенко Григорий</h1>
             <p>Выберите удобное время для встречи</p>
+            <button id="admin-login-btn" class="admin-btn" onclick="showAdminLogin()">
+                <i class="fas fa-lock"></i>
+            </button>
         </div>
 
         <div class="calendar-container">
@@ -368,7 +434,7 @@
                 <label>Комментарий (необязательно)</label>
                 <input type="text" id="comment">
             </div>
-            <button class="submit-btn">Записаться на встречу</button>
+            <button class="submit-btn" onclick="submitBooking()">Записаться на встречу</button>
         </div>
 
         <div class="contacts">
@@ -400,6 +466,24 @@
                 <i class="far fa-comment-dots"></i>
                 SMS
             </div>
+        </div>
+    </div>
+
+    <!-- Добавляем модальное окно для входа администратора -->
+    <div class="admin-login-modal" id="admin-login-modal">
+        <h3>Вход для администратора</h3>
+        <div class="form-group">
+            <label>Пароль</label>
+            <input type="password" id="admin-password" required>
+        </div>
+        <button onclick="loginAdmin()">Войти</button>
+    </div>
+
+    <!-- Добавляем админ-панель -->
+    <div class="admin-panel" id="admin-panel">
+        <h2>Панель администратора</h2>
+        <div class="bookings-list" id="admin-bookings-list">
+            <!-- Здесь будет список броней -->
         </div>
     </div>
 
@@ -463,7 +547,7 @@
             
             const dateBookings = bookings[date] || [];
             
-            for(let hour = 10; hour < 18; hour++) {
+            for(let hour = 14; hour < 21; hour++) {
                 const timeSlot = document.createElement('div');
                 const time = `${hour}:00`;
                 timeSlot.className = 'time-slot';
@@ -506,25 +590,22 @@
             document.getElementById('booking-form').style.display = 'block';
         }
 
-        // Показ модального окна для выбора способа уведомления
-        function showNotificationModal() {
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('notification-modal').style.display = 'block';
-        }
-
-        // Выбор способа уведомления и сохранение брони
-        function selectNotification(type) {
+        function submitBooking() {
             const name = document.getElementById('name').value;
             const phone = document.getElementById('phone').value;
             const comment = document.getElementById('comment').value;
+
+            if (!name || !phone) {
+                alert('Пожалуйста, заполните обязательные поля');
+                return;
+            }
 
             // Создаем новую запись
             const booking = {
                 name,
                 phone,
                 comment,
-                time: selectedTime,
-                notificationType: type
+                time: selectedTime
             };
 
             // Сохраняем в локальное хранилище
@@ -534,47 +615,69 @@
             bookings[selectedDate].push(booking);
             localStorage.setItem('bookings', JSON.stringify(bookings));
 
-            // Закрываем модальные окна
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('notification-modal').style.display = 'none';
+            // Закрываем форму
             document.getElementById('booking-form').style.display = 'none';
 
             // Показываем сообщение об успехе
-            showSuccessMessage(type);
+            alert(`Запись успешно создана!\nДата: ${selectedDate}\nВремя: ${selectedTime}`);
 
             // Обновляем отображение временных слотов
             generateTimeSlots(selectedDate);
         }
 
-        // Показ сообщения об успешной записи
-        function showSuccessMessage(notificationType) {
-            const notifications = {
-                telegram: 'Telegram',
-                email: 'email',
-                sms: 'SMS'
-            };
-
-            alert(`Запись успешно создана! 
-Уведомления будут приходить в ${notifications[notificationType]}.
-Дата: ${selectedDate}
-Время: ${selectedTime}`);
-        }
-
-        // Обработка отправки формы
-        document.querySelector('.submit-btn').onclick = function() {
-            const name = document.getElementById('name').value;
-            const phone = document.getElementById('phone').value;
-
-            if (!name || !phone) {
-                alert('Пожалуйста, заполните обязательные поля');
-                return;
-            }
-
-            showNotificationModal();
-        };
-
         // Инициализация календаря при загрузке
         generateCalendar(currentDate);
+
+        // Добавляем функции для админ-панели
+        const ADMIN_PASSWORD = 'admin123'; // Замените на свой сложный пароль
+
+        function showAdminLogin() {
+            document.getElementById('admin-login-modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function loginAdmin() {
+            const password = document.getElementById('admin-password').value;
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('admin-login-modal').style.display = 'none';
+                showAdminPanel();
+            } else {
+                alert('Неверный пароль');
+            }
+        }
+
+        function showAdminPanel() {
+            const adminPanel = document.getElementById('admin-panel');
+            adminPanel.style.display = 'block';
+            updateBookingsList();
+        }
+
+        function updateBookingsList() {
+            const bookingsList = document.getElementById('admin-bookings-list');
+            bookingsList.innerHTML = '';
+
+            Object.entries(bookings).forEach(([date, dateBookings]) => {
+                dateBookings.forEach(booking => {
+                    const bookingItem = document.createElement('div');
+                    bookingItem.className = 'booking-item';
+                    bookingItem.innerHTML = `
+                        <p><strong>Дата:</strong> ${date}</p>
+                        <p><strong>Время:</strong> ${booking.time}</p>
+                        <p><strong>Имя:</strong> ${booking.name}</p>
+                        <p><strong>Телефон:</strong> ${booking.phone}</p>
+                        <p><strong>Комментарий:</strong> ${booking.comment || '-'}</p>
+                    `;
+                    bookingsList.appendChild(bookingItem);
+                });
+            });
+        }
+
+        // Закрытие модальных окон при клике на оверлей
+        document.getElementById('overlay').addEventListener('click', function() {
+            document.getElementById('admin-login-modal').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        });
     </script>
 </body>
 </html> 
