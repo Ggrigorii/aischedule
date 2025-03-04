@@ -185,14 +185,17 @@
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
         }
 
         .time-slot:hover {
             background: rgba(100, 255, 218, 0.1);
             border-color: rgba(100, 255, 218, 0.3);
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(100, 255, 218, 0.1);
         }
 
         .time-slot:active {
@@ -252,18 +255,21 @@
         }
 
         .submit-btn {
-            background: linear-gradient(45deg, #64ffda, #0088cc);
-            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 15px 30px;
             border-radius: 10px;
             color: #fff;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .submit-btn:hover {
+            background: rgba(100, 255, 218, 0.1);
+            border-color: rgba(100, 255, 218, 0.3);
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(100, 255, 218, 0.1);
         }
 
         .contacts {
@@ -938,22 +944,27 @@
         }
 
         function getAvailableSlots(date) {
-            const totalSlots = 7; // всего 7 слотов (с 14:00 до 20:00)
             const dateAvailableSlots = availableSlots[date] || {};
-            const bookedSlots = bookings[date]?.length || 0;
+            const dateBookings = bookings[date] || [];
             
-            // Подсчитываем количество отключенных слотов (false)
-            const disabledSlots = Object.values(dateAvailableSlots).filter(value => value === false).length;
-            
-            // Вычитаем из общего количества слотов количество отключенных и забронированных
-            const available = totalSlots - disabledSlots - bookedSlots;
+            // Считаем только те слоты, которые не отключены (не false)
+            let availableCount = 0;
+            for(let hour = 14; hour < 21; hour++) {
+                const time = `${hour}:00`;
+                const isSlotAvailable = dateAvailableSlots[time] !== false;
+                const isBooked = dateBookings.some(booking => booking.time === time);
+                
+                if (isSlotAvailable && !isBooked) {
+                    availableCount++;
+                }
+            }
             
             // Определяем правильное окончание слова "место"
             let word = 'мест';
-            if (available === 1) word = 'место';
-            else if (available >= 2 && available <= 4) word = 'места';
+            if (availableCount === 1) word = 'место';
+            else if (availableCount >= 2 && availableCount <= 4) word = 'места';
             
-            return `${available} ${word}`;
+            return `${availableCount} ${word}`;
         }
 
         function prevMonth() {
