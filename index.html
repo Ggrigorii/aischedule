@@ -6,6 +6,9 @@
     <title>Онищенко Григорий - Запись на встречу</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Добавляем Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         body {
             font-family: 'Montserrat', sans-serif;
@@ -507,11 +510,39 @@
     </div>
 
     <script>
+        // Инициализация Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBt_uQ12-h70ElZZrzWEzP_0PG89FAXN_Y",
+            authDomain: "ggrigorii-42657.firebaseapp.com",
+            databaseURL: "https://ggrigorii-42657-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ggrigorii-42657",
+            storageBucket: "ggrigorii-42657.firebasestorage.app",
+            messagingSenderId: "364178328264",
+            appId: "1:364178328264:web:6a410af1a566e7ec3bb3fd",
+            measurementId: "G-7BPR5KP7Z8"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
         let currentDate = new Date();
         let selectedDate = '';
         let selectedTime = '';
-        let bookings = JSON.parse(localStorage.getItem('bookings')) || {};
+        let bookings = {};
         let isAdminMode = false;
+
+        // Слушаем изменения в базе данных
+        database.ref('bookings').on('value', (snapshot) => {
+            bookings = snapshot.val() || {};
+            generateCalendar(currentDate);
+            if (selectedDate) {
+                if (isAdminMode) {
+                    showBookingDetails(selectedDate);
+                } else {
+                    generateTimeSlots(selectedDate);
+                }
+            }
+        });
 
         function generateCalendar(date) {
             const grid = document.getElementById('calendar-grid');
@@ -640,24 +671,26 @@
                 name,
                 phone,
                 comment,
-                time: selectedTime
+                time: selectedTime,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
             };
 
-            // Сохраняем в локальное хранилище
+            // Сохраняем в Firebase
             if (!bookings[selectedDate]) {
                 bookings[selectedDate] = [];
             }
             bookings[selectedDate].push(booking);
-            localStorage.setItem('bookings', JSON.stringify(bookings));
-
-            // Закрываем форму
-            document.getElementById('booking-form').style.display = 'none';
-
-            // Показываем сообщение об успехе
-            alert(`Запись успешно создана!\nДата: ${selectedDate}\nВремя: ${selectedTime}`);
-
-            // Обновляем отображение временных слотов
-            generateTimeSlots(selectedDate);
+            database.ref('bookings').set(bookings)
+                .then(() => {
+                    // Закрываем форму
+                    document.getElementById('booking-form').style.display = 'none';
+                    // Показываем сообщение об успехе
+                    alert(`Запись успешно создана!\nДата: ${selectedDate}\nВремя: ${selectedTime}`);
+                })
+                .catch((error) => {
+                    alert('Произошла ошибка при сохранении записи. Пожалуйста, попробуйте снова.');
+                    console.error('Ошибка:', error);
+                });
         }
 
         function showBookingDetails(date) {
