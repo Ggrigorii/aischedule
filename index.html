@@ -189,41 +189,40 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(5px);
         }
 
         .time-slot:hover {
-            background: rgba(100, 255, 218, 0.1);
+            background: rgba(100, 255, 218, 0.05);
             border-color: rgba(100, 255, 218, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(100, 255, 218, 0.1);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 5px 15px rgba(100, 255, 218, 0.1),
+                0 0 0 1px rgba(100, 255, 218, 0.2);
         }
 
         .time-slot:active {
-            transform: scale(0.95);
+            transform: scale(0.98);
+            box-shadow: 
+                0 2px 8px rgba(100, 255, 218, 0.1),
+                0 0 0 1px rgba(100, 255, 218, 0.2);
         }
 
         .time-slot::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(100, 255, 218, 0.2);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.6s ease, height 0.6s ease;
-        }
-
-        .time-slot:hover::before {
-            width: 120%;
-            height: 120%;
+            display: none;
         }
 
         .time-slot.booked {
             background: rgba(255, 99, 99, 0.1);
             cursor: not-allowed;
             opacity: 0.7;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .time-slot.booked:hover {
+            transform: none;
+            box-shadow: none;
         }
 
         .booking-form {
@@ -806,25 +805,43 @@
         let bookings = {};
         let availableSlots = {};
         let isAdminMode = false;
+        let dataInitialized = false;
+
+        // Функция для проверки инициализации данных
+        function checkDataAndGenerateCalendar() {
+            if (bookings !== null && availableSlots !== null) {
+                dataInitialized = true;
+                generateCalendar(currentDate);
+            }
+        }
 
         // Слушаем изменения в базе данных
         database.ref('bookings').on('value', (snapshot) => {
             bookings = snapshot.val() || {};
-            generateCalendar(currentDate);
-            if (selectedDate) {
-                if (isAdminMode) {
-                    showBookingDetails(selectedDate);
-                } else {
-                    generateTimeSlots(selectedDate);
+            if (dataInitialized) {
+                generateCalendar(currentDate);
+                if (selectedDate) {
+                    if (isAdminMode) {
+                        showBookingDetails(selectedDate);
+                    } else {
+                        generateTimeSlots(selectedDate);
+                    }
                 }
+            } else {
+                checkDataAndGenerateCalendar();
             }
         });
 
         // Слушаем изменения в доступных слотах
         database.ref('availableSlots').on('value', (snapshot) => {
             availableSlots = snapshot.val() || {};
-            if (selectedDate) {
-                generateTimeSlots(selectedDate);
+            if (dataInitialized) {
+                generateCalendar(currentDate);
+                if (selectedDate) {
+                    generateTimeSlots(selectedDate);
+                }
+            } else {
+                checkDataAndGenerateCalendar();
             }
         });
 
@@ -950,12 +967,11 @@
             let availableCount = 0;
             for(let hour = 14; hour < 21; hour++) {
                 const time = `${hour}:00`;
-                // Проверяем, не отключен ли слот администратором
-                if (dateAvailableSlots[time] === false) {
-                    continue; // Пропускаем отключенные слоты
-                }
-                // Проверяем, не забронирован ли слот
-                if (!dateBookings.some(booking => booking.time === time)) {
+                // Если слот явно не отключен (false) и не забронирован, считаем его доступным
+                const isSlotAvailable = dateAvailableSlots[time] !== false;
+                const isBooked = dateBookings.some(booking => booking.time === time);
+                
+                if (isSlotAvailable && !isBooked) {
                     availableCount++;
                 }
             }
