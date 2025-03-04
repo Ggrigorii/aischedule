@@ -947,19 +947,19 @@
             const dateAvailableSlots = availableSlots[date] || {};
             const dateBookings = bookings[date] || [];
             
-            // Считаем только те слоты, которые не отключены (не false)
             let availableCount = 0;
             for(let hour = 14; hour < 21; hour++) {
                 const time = `${hour}:00`;
-                const isSlotAvailable = dateAvailableSlots[time] !== false;
-                const isBooked = dateBookings.some(booking => booking.time === time);
-                
-                if (isSlotAvailable && !isBooked) {
+                // Проверяем, не отключен ли слот администратором
+                if (dateAvailableSlots[time] === false) {
+                    continue; // Пропускаем отключенные слоты
+                }
+                // Проверяем, не забронирован ли слот
+                if (!dateBookings.some(booking => booking.time === time)) {
                     availableCount++;
                 }
             }
             
-            // Определяем правильное окончание слова "место"
             let word = 'мест';
             if (availableCount === 1) word = 'место';
             else if (availableCount >= 2 && availableCount <= 4) word = 'места';
